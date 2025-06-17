@@ -14,7 +14,7 @@ struct Cache_Block {
     // to implement lru or mru
     int last_access;
     // implement fifo or lifo
-    int insert_time;
+    int insert_counter; // to track the order of insertion
 };
 
 typedef enum Cache_Policy{
@@ -38,6 +38,8 @@ struct Cache_State{
     Cache_Policy policy; // LRU, FIFO, etc.
     // Global clock: incremented on every access, used for LRU and FIFO tracking
     int timestamp;
+    int insert_counter; // to track the number of inserts
+    bool debug; // debug mode
 
 };
 
