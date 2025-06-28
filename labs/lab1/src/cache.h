@@ -7,6 +7,9 @@
 typedef struct Cache_Block Cache_Block;
 typedef struct Cache_State Cache_State;
 
+typedef enum Cache_Result { CACHE_MISS, CACHE_HIT } Cache_Result;
+
+
 
 struct Cache_Block {
     uint32_t tag;
@@ -24,7 +27,6 @@ typedef enum Cache_Policy{
 
 typedef void (*replacement_func_t)(Cache_State *c, Cache_Block *set, uint32_t tag);
 
-typedef enum Cache_Result { CACHE_MISS, CACHE_HIT } Cache_Result;
 
 struct Cache_State{
     int total_size;
