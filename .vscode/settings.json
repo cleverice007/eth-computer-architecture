@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "cache.h": "c"
+        "cache.h": "c",
+        "assert.h": "c"
     }
 }

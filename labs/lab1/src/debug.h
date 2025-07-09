@@ -2,8 +2,9 @@
 #define _DEBUG_H_
 
 /* enable/disable global debugging */
-#define DEBUG 0
-#define DEBUG_PIPE (0 & DEBUG)
+#define DEBUG 1
+#define DEBUG_PIPE (1 & DEBUG)
+
 
 #if DEBUG
 #    define debug(debug, fmt...) debug ? printf(fmt) : ((void)0)

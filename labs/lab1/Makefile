@@ -13,8 +13,7 @@ basesim: $(SRC)
 	gcc -Wall -Wextra -g -O2 $^ -o $@
 
 run: sim
-	@python run.py $(INPUT)
+	@python3 run.py $(INPUT)
 
 clean:
 	rm -rf *.o *~ sim
-

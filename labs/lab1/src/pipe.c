@@ -10,7 +10,7 @@
 
 
 
-//#define DEBUG
+#define DEBUG
 
 /* debug */
 void print_op(Pipe_Op *op)
@@ -23,11 +23,7 @@ void print_op(Pipe_Op *op)
         printf("(null)\n");
 }
 
-void print_cache(Cache_State *c, char *name) {
-  printf("%s: %d bytes total %d bytes block %d ways %d sets policy: %s\n\n",
-         name, c->total_size, c->block_size, c->num_ways, c->num_sets,
-         c->policy);
-}
+
 
 /* global pipeline state */
 Pipe_State pipe;
@@ -51,7 +47,6 @@ void pipe_init() {
              4,             // 4-way
              Cache_LRU_LRU, // replacement policy
              false);        // is_data = false
-  print_cache(&inst_cache, "instruction cache");
 
   // init data cache
   cache_init(&data_cache,
@@ -60,7 +55,6 @@ void pipe_init() {
              4,             // 4-way
              Cache_LRU_LRU, // replacement policy
              true);         // is_data = true
-  print_cache(&data_cache, "data cache");
 }
 
 
@@ -164,6 +158,13 @@ void pipe_stage_wb()
 
 void pipe_stage_mem()
 {
+    // if there is stall in the pipeline, we cannot proceed
+    if (pipe.data_cache_stall > 0) {
+    pipe.data_cache_stall--;
+    return;
+    }
+
+
     /* if there is no instruction in this pipeline stage, we are done */
     if (!pipe.mem_op)
         return;
@@ -171,8 +172,18 @@ void pipe_stage_mem()
     /* grab the op out of our input slot */
     Pipe_Op *op = pipe.mem_op;
 
-    uint32_t val = 0;
-    if (op->is_mem)
+uint32_t val = 0;
+  if (op->is_mem) {
+    /* both loads and stores read an addr so we stall pipeline only once */
+    if (cache_access(&data_cache, op->mem_addr) == CACHE_MISS) {
+      pipe.data_cache_stall = 48;
+      stat_data_cache_misses++;
+      return;
+    }
+
+    val = mem_read_32(op->mem_addr & ~3);
+    stat_data_cache_hits++;
+  }    if (op->is_mem)
         val = mem_read_32(op->mem_addr & ~3);
 
     switch (op->opcode) {
@@ -693,7 +704,22 @@ void pipe_stage_decode()
 }
 
 void pipe_stage_fetch()
-{
+{   
+    // if there is a stall in the pipeline, we cannot fetch
+    if (pipe.inst_cache_stall > 0) {
+    pipe.inst_cache_stall--;
+    return;
+  }
+
+      if (cache_access(&inst_cache, pipe.PC) == CACHE_MISS) {
+    pipe.inst_cache_stall = 48;
+    stat_inst_cache_misses++;
+    return;
+  }
+
+  stat_inst_cache_hits++;
+
+
     /* if pipeline is stalled (our output slot is not empty), return */
     if (pipe.decode_op != NULL)
         return;
