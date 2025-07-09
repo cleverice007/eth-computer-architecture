@@ -6,6 +6,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include "cache.h"
+
+
 
 //#define DEBUG
 
@@ -20,14 +23,46 @@ void print_op(Pipe_Op *op)
         printf("(null)\n");
 }
 
+void print_cache(Cache_State *c, char *name) {
+  printf("%s: %d bytes total %d bytes block %d ways %d sets policy: %s\n\n",
+         name, c->total_size, c->block_size, c->num_ways, c->num_sets,
+         c->policy);
+}
+
 /* global pipeline state */
 Pipe_State pipe;
 
-void pipe_init()
-{
-    memset(&pipe, 0, sizeof(Pipe_State));
-    pipe.PC = 0x00400000;
+// init instruction cache and data cache
+Cache_State inst_cache;
+Cache_State data_cache;
+
+// Cache policy
+
+Cache_Policy cache_policy = Cache_LRU_LRU; // LRU for both instruction and data cache
+
+void pipe_init() {
+  memset(&pipe, 0, sizeof(Pipe_State));
+  pipe.PC = 0x00400000;
+
+  // init instruction cache
+  cache_init(&inst_cache,
+             8 * 1024,      // total size = 8KB
+             32,            // block size
+             4,             // 4-way
+             Cache_LRU_LRU, // replacement policy
+             false);        // is_data = false
+  print_cache(&inst_cache, "instruction cache");
+
+  // init data cache
+  cache_init(&data_cache,
+             16,            // small total size for data cache
+             4,             // block size
+             4,             // 4-way
+             Cache_LRU_LRU, // replacement policy
+             true);         // is_data = true
+  print_cache(&data_cache, "data cache");
 }
+
 
 void pipe_cycle()
 {
